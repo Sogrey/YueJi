@@ -1,18 +1,25 @@
 package top.sogrey.yueji.ui
 
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.content.Intent
-import android.net.Uri
-import android.os.Parcelable
-import kotlinx.android.synthetic.main.activity_share_receive.*
-import org.jetbrains.anko.longToast
 import android.content.Intent.EXTRA_STREAM
+import android.net.Uri
+import android.os.Bundle
+import android.os.Parcelable
+import android.support.v7.app.AppCompatActivity
+import android.text.Html
+import com.bumptech.glide.Glide
+//import com.raizlabs.android.dbflow.kotlinextensions.save
+import kotlinx.android.synthetic.main.activity_share_receive.*
 import org.jetbrains.anko.async
+import org.jetbrains.anko.longToast
 import org.jsoup.Jsoup
 import top.sogrey.yueji.R
+//import top.sogrey.yueji.model.NewsType
 import top.sogrey.yueji.utils.RegUtils
-import top.sogrey.yueji.utils.logI
+import top.sogrey.yueji.utils.logE
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.Exception as Exception1
 
 
 class ShareReceiveActivity : AppCompatActivity() {
@@ -25,39 +32,29 @@ class ShareReceiveActivity : AppCompatActivity() {
         val intent = intent
         val action = intent.action
         val type = intent.type
-        var result = StringBuffer()
-        result.append("处理发送来分享$intent\n\n")
+
         if (Intent.ACTION_SEND == action && type != null) {
             val uri = intent.getParcelableExtra<Uri>(EXTRA_STREAM)
             when {
                 type.startsWith("text/") -> {// 处理发送来文本
-//                    longToast("处理发送来图片$uri")
                     dealTextMessage(intent)
-
-                    val share = intent.getStringExtra(Intent.EXTRA_TEXT)
-                    val title = intent.getStringExtra(Intent.EXTRA_TITLE)
-                    val subject = intent.getStringExtra(Intent.EXTRA_SUBJECT)
-                    result.append(
-                        "处理发送来文本:title--$title\n\nsubject--$subject\n" +
-                                "\ntext--$share"
-                    )
                 }
                 type.startsWith("image/") -> {// 处理发送来图片
 //                    longToast("处理发送来图片$uri")
 //                    dealPicStream(intent)
-                    result.append("处理发送来图片$uri\n\n")
+//                    result.append("处理发送来图片$uri\n\n")
                 }
                 type.startsWith("audio/") -> {// 处理发送来音频
                     longToast("处理发送来音频$uri")
-                    result.append("处理发送来音频$uri\n\n")
+//                    result.append("处理发送来音频$uri\n\n")
                 }
                 type.startsWith("video/") -> {// 处理发送来的视频
                     longToast("处理发送来的视频$uri")
-                    result.append("处理发送来的视频$uri\n\n")
+//                    result.append("处理发送来的视频$uri\n\n")
                 }
                 else -> {//处理发送过来的其他文件
                     longToast("处理发送过来的其他文件$uri")
-                    result.append("处理发送过来的其他文件$uri\n\n")
+//                    result.append("处理发送过来的其他文件$uri\n\n")
                 }
             }
         } else if (Intent.ACTION_SEND_MULTIPLE == action && type != null) {
@@ -80,9 +77,6 @@ class ShareReceiveActivity : AppCompatActivity() {
                 }
             }
         }
-
-        shareResult.text = result.toString()
-        logI(msg = result.toString())
     }
 
 //    private fun dealMultiplePicStream(intent: Intent) {
@@ -95,28 +89,99 @@ class ShareReceiveActivity : AppCompatActivity() {
 
     private fun dealTextMessage(intent: Intent) {
         val share = intent.getStringExtra(Intent.EXTRA_TEXT)
-//        val title = intent.getStringExtra(Intent.EXTRA_TITLE)
+        val title: String? = intent.getStringExtra(Intent.EXTRA_TITLE)
+        val subject: String? = intent.getStringExtra(Intent.EXTRA_SUBJECT)
 
-        var urls = RegUtils.find(share, RegUtils.REG_HTTP)
-        logI(msg = "1==$urls")
-        var url = urls[0]
-        logI(msg = "2==$url")
+        val newTitle = title ?: subject
+        txt_title.setText(newTitle ?: "")
+        edt_note.setText(share)
+
+        val urls = RegUtils.find(share, RegUtils.REG_HTTP)
+        val url = urls[0]
+        txt_url.text = Html.fromHtml("<a href=\"$url\">$url</a>")
+
+        val df = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")//设置日期格式
+        txt_acquisition_time.text = "采集时间：${df.format(Date())}"
+
         getWebTitle(url)
+//        wv_WebView.loadUrl(url)
+
+
     }
 
-    fun getWebTitle(url: String) {
+    private fun getWebTitle(url: String) {
         async {
             try {
+                var baseUrlProtocol = url.split("//")[0]
                 val doc = Jsoup.connect(url).get()
                 val links = doc.select("head")
-                val titleLinks = links[0].select("title")
-                var title = titleLinks[0].text()
-                return@async runOnUiThread {
-                    logI(msg = "3==$title")
+                val titleLinks = links[0].select("title").first()
+                val title = titleLinks.text()
+                val authorLinks =doc.body().select(".author>.info>.name>a").first()
+                val author = authorLinks.text()
+                val iconLinkEle = doc.head().select("link[href~=.*\\.(ico|png)]").first()
+                var iconLink = iconLinkEle.attr("href")
+                if (iconLink.startsWith("//")) {
+                    iconLink = "$baseUrlProtocol$iconLink"
+                }
+                val publishCssQuery = getPublishTimeCssQuery(url)
+                var publishTime = "..."
+                if (null != publishCssQuery) {
+                    val publishTimeEle = doc.body().select(publishCssQuery).first()
+                    publishTime = publishTimeEle.text()
+                }
+                publishTime = processing(publishTime)
+                val firstImageEle = doc.body().select(".show-content").select("img").first()
+                //.select("img[src~=.*\\.(jpg|jpeg|png|webp)]").first()
+                var firstImage = firstImageEle!!.attr("data-original-src")
+                if (firstImage.startsWith("//")) {
+                    firstImage = "$baseUrlProtocol$firstImage"
+                }
+                runOnUiThread {
+                    txt_title.setText(title)
+                    txt_author.text = "作者：$author"
+                    txt_published_time.text = "发布时间：$publishTime"
+                    Glide.with(this@ShareReceiveActivity).load(iconLink).into(img_source_icon)
+                    Glide.with(this@ShareReceiveActivity).load(firstImage).into(img_firstIamge)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    /**
+     * 时间处理，主要针对 今天、昨天、一周前之类的时间
+     */
+    private fun processing(publishTime: String): String {
+        var publishTimeStr = publishTime.replace("编辑于", "").replace("发布于", "").trim() //知乎
+        //今天、昨天、前天、一周前、一月前、一年前
+        return publishTimeStr
+    }
+
+    /**
+     * 获取发布时间的css选择器
+     */
+    private fun getPublishTimeCssQuery(url: String): String? {
+        return when {
+            url.startsWith("https://www.jianshu.com/") -> {//简书
+                ".publish-time"
+            }
+            url.startsWith("https://juejin.im/") -> {//掘金
+                "time.time"
+            }
+            url.startsWith("https://zhuanlan.zhihu.com/") -> {//知乎专栏
+                ".ContentItem-time"
+            }
+            url.startsWith("https://www.zhihu.com/question/") -> {//知乎问答
+                ".ContentItem-time>a>span"
+            }
+            url.startsWith("https://mp.weixin.qq.com/") -> {//微信
+                "#publish_time"
+            }
+
+
+            else -> null
         }
     }
 }

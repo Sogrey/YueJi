@@ -5,16 +5,108 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         tools:context=".ui.ShareReceiveActivity">
 
-    <TextView
-            android:text="分享"
+    <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/shareResult"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginBottom="8dp" tools:ignore="MissingConstraints"/>
+            android:layout_height="match_parent">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+            <android.support.v7.widget.AppCompatEditText
+                    android:id="@+id/txt_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="请输入标题"
+                    android:textColorHint="#999"
+                    android:textColor="#111"
+                    android:textSize="21sp"
+                    />
+
+    <android.support.v7.widget.AppCompatTextView android:id="@+id/txt_author"
+            android:layout_width="wrap_content" android:text="作者："
+            android:layout_height="wrap_content"/>
+            <android.support.v7.widget.AppCompatTextView
+                    android:id="@+id/txt_url"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#111"
+                    android:textSize="15sp"
+                    />
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_height="wrap_content">
+
+                <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:layout_height="match_parent"
+                        android:orientation="horizontal">
+
+                    <android.support.v7.widget.AppCompatTextView
+                            android:id="@+id/txt_source"
+                            android:layout_width="wrap_content"
+                            android:text="来源："
+                            android:layout_height="wrap_content"/>
+
+                    <android.support.v7.widget.AppCompatImageView
+                            android:id="@+id/img_source_icon"
+                            android:layout_width="30dp"
+                            android:layout_height="30dp"
+                            android:src="@drawable/ic_record"/>
+                </LinearLayout>
+
+                <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="2"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                    <android.support.v7.widget.AppCompatTextView
+                            android:id="@+id/txt_published_time"
+                            android:layout_width="wrap_content"
+                            android:text="发布时间：..."
+                            android:layout_height="wrap_content"/>
+
+                    <android.support.v7.widget.AppCompatTextView
+                            android:id="@+id/txt_acquisition_time"
+                            android:layout_width="wrap_content"
+                            android:text="采集时间：..."
+                            android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <ImageView
+                    android:id="@+id/img_firstIamge"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+            <android.support.v7.widget.AppCompatEditText
+                    android:id="@+id/edt_note"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="请输入备注"
+                    android:textColorHint="#999"
+                    android:textColor="#111"
+                    android:textSize="15sp"
+                    />
+
+            <WebView
+                    android:visibility="gone"
+                    android:id="@+id/wv_WebView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+        </LinearLayout>
+    </ScrollView>
+
 </android.support.constraint.ConstraintLayout>
+
