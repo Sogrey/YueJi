@@ -1,29 +1,23 @@
 package top.sogrey.yueji.ui
 
 import android.content.Intent
-import android.content.Intent.EXTRA_STREAM
 import android.net.Uri
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.v7.app.AppCompatActivity
 import android.text.Html
-import com.bumptech.glide.Glide
-//import com.raizlabs.android.dbflow.kotlinextensions.save
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_share_receive.*
 import org.jetbrains.anko.async
 import org.jetbrains.anko.longToast
 import org.jsoup.Jsoup
+import top.sogrey.common.utils.RegUtils
+import top.sogrey.common.utils.loadImage
 import top.sogrey.yueji.R
-//import top.sogrey.yueji.model.NewsType
-import top.sogrey.yueji.utils.RegUtils
-import top.sogrey.yueji.utils.logE
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.Exception as Exception1
 
-
-class ShareReceiveActivity : AppCompatActivity() {
-
+class ShareReceiveActivity: AppCompatActivity()  {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_share_receive)
@@ -34,7 +28,7 @@ class ShareReceiveActivity : AppCompatActivity() {
         val type = intent.type
 
         if (Intent.ACTION_SEND == action && type != null) {
-            val uri = intent.getParcelableExtra<Uri>(EXTRA_STREAM)
+            val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
             when {
                 type.startsWith("text/") -> {// 处理发送来文本
                     dealTextMessage(intent)
@@ -58,7 +52,7 @@ class ShareReceiveActivity : AppCompatActivity() {
                 }
             }
         } else if (Intent.ACTION_SEND_MULTIPLE == action && type != null) {
-            val arrayList = intent.getParcelableArrayListExtra<Parcelable>(EXTRA_STREAM)
+            val arrayList = intent.getParcelableArrayListExtra<Parcelable>(Intent.EXTRA_STREAM)
             when {
                 type.startsWith("image/") -> {// 处理发送来多张图片
 //                    dealMultiplePicStream(intent)
@@ -141,8 +135,8 @@ class ShareReceiveActivity : AppCompatActivity() {
                     txt_title.setText(title)
                     txt_author.text = "作者：$author"
                     txt_published_time.text = "发布时间：$publishTime"
-                    Glide.with(this@ShareReceiveActivity).load(iconLink).into(img_source_icon)
-                    Glide.with(this@ShareReceiveActivity).load(firstImage).into(img_firstIamge)
+                    img_source_icon.loadImage(iconLink)
+                    img_firstIamge.loadImage(firstImage)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -154,9 +148,8 @@ class ShareReceiveActivity : AppCompatActivity() {
      * 时间处理，主要针对 今天、昨天、一周前之类的时间
      */
     private fun processing(publishTime: String): String {
-        var publishTimeStr = publishTime.replace("编辑于", "").replace("发布于", "").trim() //知乎
         //今天、昨天、前天、一周前、一月前、一年前
-        return publishTimeStr
+        return publishTime.replace("编辑于", "").replace("发布于", "").trim()
     }
 
     /**
@@ -179,8 +172,6 @@ class ShareReceiveActivity : AppCompatActivity() {
             url.startsWith("https://mp.weixin.qq.com/") -> {//微信
                 "#publish_time"
             }
-
-
             else -> null
         }
     }
