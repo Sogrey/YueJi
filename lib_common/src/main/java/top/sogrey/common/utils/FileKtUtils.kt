@@ -5,9 +5,9 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import androidx.core.content.FileProvider
+import top.sogrey.common.AppConfig
 import top.sogrey.common.R
+import top.sogrey.common.compatible.FileProvider7
 import java.io.File
 
 
@@ -35,6 +35,23 @@ class FileKtUtils {
             return file.exists() && file.isFile
         }
 
+        /**
+         * 根据文件路径获取文件File对象
+         * @param filePath 文件路径
+         * @return 文件File对象
+         */
+        fun getFileByPath(filePath: String): File? {
+            return if (StringUtils.isSpace(filePath)) null else File(filePath)
+        }
+
+        /**
+         * 文件是否存在
+         * @param file 欲判断的文件对象
+         *  @return true:文件存在;false:文件不存在
+         */
+        fun isFileExists(file: File?): Boolean {
+            return file != null && file.exists()
+        }
 
         /**
          * 根据文件路径打开文件
@@ -63,13 +80,9 @@ class FileKtUtils {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             // 设置intent的Action属性
             intent.action = Intent.ACTION_VIEW
-            // 获取文件file的MIME类型
-            val type =FileMIME.getFileMIME(file.absolutePath)
-            // 设置intent的data和Type属性。
-            val fileUri = ConvertUtils.file2Uri(context, file)
-            intent.setDataAndType(fileUri, type)
-            //授予临时读写权限
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            //设置意图Intent的dataAndType,兼容android 7.0（API = 24）
+            FileProvider7.setIntentDataAndType(context, intent, file, true)
+
             // 跳转
             try {
                 if (file.exists()) {
@@ -78,11 +91,30 @@ class FileKtUtils {
                 } else {
                     ToastUtils.show(R.string.txt_bad_file)
                 }
-                // //比如说你的MIME类型是打开邮箱，但是你手机里面没装邮箱客户端，就会报错。
+                //比如说你的MIME类型是打开邮箱，但是你手机里面没装邮箱客户端，就会报错。
             } catch (e: ActivityNotFoundException) {
                 e.printStackTrace()
                 LogKtUtils.e(context.getString(R.string.txt_no_match_application))
+                if (AppConfig.DEBUG) {
+                    ToastUtils.show(
+                        context.resources.getString(
+                            R.string.txt_no_match_application2,
+                            file.absolutePath
+                        )
+                    )
+                }
             }
         }
     }
+}
+
+
+/**
+ * 获取文件Uri
+ * @param context 上下文对象
+ * @param file 文件
+ * @return 文件Uri
+ */
+fun File.getUri(): Uri {
+    return FileProvider7.getUriForFile(AppUtils.getApp(), this)
 }
